@@ -1,7 +1,8 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./openzeppelin/access/Ownable.sol";
+import "./openzeppelin/token/ERC721/ERC721.sol";
+// import "./core/abstractV2/PendleLiquidityMiningBaseV2.sol";
 
 contract PendleItemFactory is Ownable, ERC721 {
     event NewItem(uint id, string name, uint dna);
