@@ -2,17 +2,17 @@
 
 pragma solidity ^0.7.0;
 
-import "../../GSN/Context.sol";
-import "./IERC721.sol";
-import "./IERC721Metadata.sol";
-import "./IERC721Enumerable.sol";
-import "./IERC721Receiver.sol";
-import "../../introspection/ERC165.sol";
-import "../../math/SafeMath.sol";
-import "../../utils/Address.sol";
-import "../../utils/EnumerableSet.sol";
-import "../../utils/EnumerableMap.sol";
-import "../../utils/Strings.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/GSN/Context.sol";
+import "@openzeppelin/contracts/introspection/ERC165.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/EnumerableMap.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title ERC721 Non-Fungible Token Standard basic implementation
