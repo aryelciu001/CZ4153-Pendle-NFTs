@@ -49,10 +49,15 @@ describe("PendleItemFactory", async function () {
       owner.address
     );
     await pif.deployed();
-    await pif["transfer(address,uint256)"](addr1.address, 10*10^18)
-    console.log(await pif["balanceOf(address)"](owner.address))
-    console.log(await pif["balanceOf(address)"](addr1.address))
-    console.log(await pif["balanceOf(address)"](addr2.address))
-    console.log(BigNumber.from(100))
+    let multiplier = BigNumber.from(10).pow(18)
+
+    // by now, owner must have 188,700,000 pendle tokens
+    expect(await pif["balanceOf(address)"](owner.address)).to.equal(BigNumber.from(188700000).mul(multiplier))
+
+    // transfer 10 pendle tokens to addr1 
+    await pif["transfer(address,uint256)"](addr1.address, BigNumber.from(10).mul(multiplier))
+    
+    // now addr1 have 10 tokens
+    expect(await pif["balanceOf(address)"](addr1.address)).to.equal(BigNumber.from(10).mul(multiplier))
   }).timeout(10000);
 });
