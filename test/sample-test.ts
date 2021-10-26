@@ -2,8 +2,10 @@ import { expect } from "chai";
 import { Signer, ContractFactory, Contract } from "ethers";
 import { ethers } from "hardhat";
 
-const contractName = "PendleItemFactory";
-const pendleContractName = "PENDLE";
+const contractName: string = "PendleItemFactory";
+const pendleContractName: string = "PENDLE";
+const pendleLiquidityContractName: string = "PendleLiquidityMiningBaseV2";
+const zeroAddress: string = "0x0000000000000000000000000000000000000000";
 
 describe("PendleItemFactory", async function () {
   let owner: Signer; 
@@ -11,9 +13,10 @@ describe("PendleItemFactory", async function () {
   let addr2: Signer;
   let PendleItemFactory: ContractFactory;
   let pif: Contract;
-  let ownerAddress: String;
-  let addr1Address: String;
-  let addr2Address: String;
+  let ownerAddress: string;
+  let addr1Address: string;
+  let addr2Address: string;
+  let pendleTokenAddress: string;
   
   it("Deploying smart contract...", async function () {
     PendleItemFactory = await ethers.getContractFactory(contractName);
@@ -56,8 +59,8 @@ describe("PendleItemFactory", async function () {
       ownerAddress, 
       ownerAddress
     );
-    await pif.deployed();
-    // let multiplier = BigNumber.from(10).pow(18)
+    pendleTokenAddress = pif.address
+    await pif.deployed()
 
     // by now, owner must have 188,700,000 pendle tokens
     let ownerCoin = await pif["balanceOf(address)"](ownerAddress)
@@ -73,5 +76,21 @@ describe("PendleItemFactory", async function () {
     addr1Coin = ethers.utils.formatEther(addr1Coin)
     addr1Coin = Number(addr1Coin)
     expect(addr1Coin).to.equal(10)
+  }).timeout(10000);
+
+  it("Deploying PENDLE LIQUIDITY MINING contract...", async function () {
+    let PendleLiquidityMining = await ethers.getContractFactory(pendleLiquidityContractName);
+    pif = await PendleLiquidityMining.deploy(
+      ownerAddress, 
+      zeroAddress, 
+      zeroAddress, 
+      pendleTokenAddress, 
+      pendleTokenAddress,
+      zeroAddress,
+      Math.floor(Date.now() / 1000) + 60,
+      10,
+      10
+    );
+    await pif.deployed();
   }).timeout(10000);
 });
