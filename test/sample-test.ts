@@ -17,6 +17,7 @@ describe("PendleItemFactory", async function () {
   let addr1Address: string;
   let addr2Address: string;
   let pendleTokenAddress: string;
+  let liquidityMiningAddress: string;
   
   it("Deploying smart contract...", async function () {
     PendleItemFactory = await ethers.getContractFactory(contractName);
@@ -82,7 +83,7 @@ describe("PendleItemFactory", async function () {
     let PendleLiquidityMining = await ethers.getContractFactory(pendleLiquidityContractName);
     pif = await PendleLiquidityMining.deploy(
       ownerAddress, 
-      zeroAddress, 
+      ownerAddress, 
       zeroAddress, 
       pendleTokenAddress, 
       pendleTokenAddress,
@@ -91,6 +92,23 @@ describe("PendleItemFactory", async function () {
       10,
       10
     );
+    liquidityMiningAddress = pif.address
     await pif.deployed();
+    console.log(ownerAddress, 
+      ownerAddress, 
+      zeroAddress, 
+      pendleTokenAddress, 
+      pendleTokenAddress,
+      zeroAddress,
+      Math.floor(Date.now() / 1000) + 60,
+      10,
+      10)
   }).timeout(10000);
+
+  // it("Stake pendle token...", async function () {
+  //   let stakerAddress = addr2Address
+  //   expect(liquidityMiningAddress).to.equal(pif.address)
+  //   console.log(stakerAddress, stakerAddress, ethers.utils.parseEther("10"))
+  //   // await pif["stake(address,uint256)"](stakerAddress, ethers.utils.parseEther("10"))
+  // })
 });
