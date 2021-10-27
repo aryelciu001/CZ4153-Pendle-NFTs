@@ -105,6 +105,10 @@ describe("PendleItemFactory", async function () {
   }).timeout(10000);
 
   it("should stake pendle token...", async function () {
+    // allow liquidity mining contract to spend 1000 pendle tokens
+    await pendleContract.connect(owner)["approve(address,uint256)"](pendleLiquidityMiningContract.address, ethers.utils.parseEther("1000"))
+
+    // trying to stake
     // await pendleLiquidityMiningContract.connect(addr2)["stake(address,uint256)"](addr2Address, ethers.utils.parseEther("10"))
   });
 });

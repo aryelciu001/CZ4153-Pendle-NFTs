@@ -15,3 +15,10 @@
 
 # How to test
 1. `npx hardhat test` 
+
+# Run Web3
+
+React is used for the frontend
+
+1. `npm install` in frontend
+2. npm start

@@ -14,7 +14,8 @@ async function main() {
   pendleTokenAddress = await deployPendleToken()
   let liquidityMiningAddress
   liquidityMiningAddress = await deployLiquidityMining(pendleTokenAddress)
-  console.log(liquidityMiningAddress)
+  console.log(`Pendle token address: ${pendleTokenAddress}`)
+  // console.log(liquidityMiningAddress)
 
   console.log("Account balance (after):", (await deployer.getBalance()).toString());
 }
