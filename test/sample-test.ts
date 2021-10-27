@@ -40,24 +40,24 @@ describe("PendleItemFactory", async function () {
   }).timeout(10000);
   
   it("Should create new items...", async function () {
-    await pendleItemFactoryContract.createNewItem("first")
-    await pendleItemFactoryContract.createNewItem("second")
-    await pendleItemFactoryContract.createNewItem("third")
+    await pendleItemFactoryContract.createNewItem("first");
+    await pendleItemFactoryContract.createNewItem("second");
+    await pendleItemFactoryContract.createNewItem("third");
   })
   
   it("should transfer items...", async function () {
     // transfer directly from owner to addr1
-    await pendleItemFactoryContract["safeTransferFrom(address,address,uint256)"](ownerAddress, addr1Address, 1)
+    await pendleItemFactoryContract["safeTransferFrom(address,address,uint256)"](ownerAddress, addr1Address, 1);
     // approve addr1 to move token 2
-    await pendleItemFactoryContract["approve(address,uint256)"](addr1Address, 2)
+    await pendleItemFactoryContract["approve(address,uint256)"](addr1Address, 2);
     // transfer from owner to addr2, called by addr1
-    await pendleItemFactoryContract.connect(addr1)["safeTransferFrom(address,address,uint256)"](ownerAddress, addr2Address, 2)
+    await pendleItemFactoryContract.connect(addr1)["safeTransferFrom(address,address,uint256)"](ownerAddress, addr2Address, 2);
   })
 
   it("should check owner...", async function () {
-    expect(await pendleItemFactoryContract.ownerOf(0)).to.equal(ownerAddress)
-    expect(await pendleItemFactoryContract.ownerOf(1)).to.equal(addr1Address)
-    expect(await pendleItemFactoryContract.ownerOf(2)).to.equal(await addr2.getAddress())
+    expect(await pendleItemFactoryContract.ownerOf(0)).to.equal(ownerAddress);
+    expect(await pendleItemFactoryContract.ownerOf(1)).to.equal(addr1Address);
+    expect(await pendleItemFactoryContract.ownerOf(2)).to.equal(await addr2.getAddress());
   })
 
   it("should deploy PENDLE contract...", async function () {
@@ -70,22 +70,22 @@ describe("PendleItemFactory", async function () {
       ownerAddress, 
       ownerAddress
     );
-    await pendleContract.deployed()
+    await pendleContract.deployed();
 
     // by now, owner must have 188,700,000 pendle tokens
-    let ownerCoin = await pendleContract["balanceOf(address)"](ownerAddress)
-    ownerCoin = ethers.utils.formatEther(ownerCoin)
-    ownerCoin = Number(ownerCoin)
-    expect(ownerCoin).to.equal(188700000)
+    let ownerCoin = await pendleContract["balanceOf(address)"](ownerAddress);
+    ownerCoin = ethers.utils.formatEther(ownerCoin);
+    ownerCoin = Number(ownerCoin);
+    expect(ownerCoin).to.equal(188700000);
 
     // transfer 10 pendle tokens to addr1 
-    await pendleContract["transfer(address,uint256)"](addr1Address, ethers.utils.parseEther("10"))
+    await pendleContract["transfer(address,uint256)"](addr1Address, ethers.utils.parseEther("10"));
     
     // now addr1 have 10 tokens
-    let addr1Coin = await pendleContract["balanceOf(address)"](addr1Address)
-    addr1Coin = ethers.utils.formatEther(addr1Coin)
-    addr1Coin = Number(addr1Coin)
-    expect(addr1Coin).to.equal(10)
+    let addr1Coin = await pendleContract["balanceOf(address)"](addr1Address);
+    addr1Coin = ethers.utils.formatEther(addr1Coin);
+    addr1Coin = Number(addr1Coin);
+    expect(addr1Coin).to.equal(10);
   }).timeout(10000);
 
   it("should deploy PENDLE LIQUIDITY MINING contract...", async function () {
@@ -106,5 +106,5 @@ describe("PendleItemFactory", async function () {
 
   it("should stake pendle token...", async function () {
     // await pendleLiquidityMiningContract.connect(addr2)["stake(address,uint256)"](addr2Address, ethers.utils.parseEther("10"))
-  })
+  });
 });
