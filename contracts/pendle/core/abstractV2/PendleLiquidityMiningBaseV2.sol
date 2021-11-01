@@ -8,6 +8,7 @@ import "../../interfaces/IPendlePausingManager.sol";
 import "../../interfaces/IPendleWhitelist.sol";
 import "../../libraries/MathLib.sol";
 import "../../libraries/TokenUtilsLib.sol";
+import "../../../PendleItemFactory.sol";
 
 /*
 - stakeToken is the token to be used to stake into this contract to receive rewards
@@ -30,6 +31,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
 
     IPendleWhitelist public immutable whitelist;
     IPendlePausingManager public immutable pausingManager;
+    address pendleItemFactoryAddress;
 
     uint256 public override numberOfEpochs;
     uint256 public override totalStake;
@@ -52,6 +54,27 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     uint256 public override lastNYield;
     uint256 public override paramL;
 
+    // for NFTs
+    address[] public stakers;
+
+    function _pickNFTWinner() internal {
+        PendleItemFactory pif = PendleItemFactory(pendleItemFactoryAddress);
+        address pifOwner = pif.contractOwner();
+        if (pif.balanceOf(pifOwner) == 0) return;
+        if (stakers.length == 0) return;
+        uint256 random = uint256(keccak256(abi.encodePacked(block.timestamp)));
+        uint256 stakerIndex = random % stakers.length;
+        address winner = stakers[stakerIndex];
+        pif.safeTransferFrom(pifOwner, winner, 100 - (pif.balanceOf(pifOwner)));
+    }
+
+    function testNFTTransfer(address winnerAddress) public {
+        PendleItemFactory pif = PendleItemFactory(pendleItemFactoryAddress);
+        address pifOwner = pif.contractOwner();
+        if (pif.balanceOf(pifOwner) == 0) return;
+        pif.safeTransferFrom(pifOwner, winnerAddress, 100 - (pif.balanceOf(pifOwner)));
+    }
+
     modifier hasStarted() {
         require(_getCurrentEpochId() > 0, "NOT_STARTED");
         _;
@@ -64,8 +87,10 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     }
 
     modifier isUserAllowedToUse() {
-        (bool paused, ) = pausingManager.checkLiqMiningStatus(address(this));
-        require(!paused, "LIQ_MINING_PAUSED");
+        // remove pausing manager contract for simplicity
+        // (bool paused, ) = pausingManager.checkLiqMiningStatus(address(this));
+        // require(!paused, "LIQ_MINING_PAUSED");
+
         require(numberOfEpochs > 0, "NOT_FUNDED");
         require(_getCurrentEpochId() > 0, "NOT_STARTED");
         _;
@@ -80,7 +105,8 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         address _yieldToken,
         uint256 _startTime,
         uint256 _epochDuration,
-        uint256 _vestingEpochs
+        uint256 _vestingEpochs,
+        address _pendleItemFactoryAddress
     ) PermissionsV2(_governanceManager) {
         require(_startTime > block.timestamp, "INVALID_START_TIME");
         TokenUtils.requireERC20(_pendleTokenAddress);
@@ -89,6 +115,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         // yieldToken can be zero address
         pausingManager = IPendlePausingManager(_pausingManager);
         whitelist = IPendleWhitelist(_whitelist);
+        pendleItemFactoryAddress = _pendleItemFactoryAddress;
         pendleTokenAddress = _pendleTokenAddress;
 
         stakeToken = _stakeToken;
@@ -184,6 +211,19 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         require(_getCurrentEpochId() <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
 
         _settleStake(forAddr, msg.sender, amount);
+
+        // add staker address for NFT
+        // every epoch, select one of stakers to receive pendle item
+        bool hasStaked = false;
+        for (uint256 i = 0; i<stakers.length; i++) {
+            if (stakers[i] == forAddr) {
+                hasStaked = true;
+            }
+        }
+        if (!hasStaked) {
+            stakers.push(forAddr);
+        }
+
         emit Staked(forAddr, amount);
     }
 
@@ -203,6 +243,14 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     {
         require(amount != 0, "ZERO_AMOUNT");
         require(toAddr != address(0), "ZERO_ADDRESS");
+
+        // remove address from stakers array
+        for (uint256 i = 0; i<stakers.length; i++) {
+            if (stakers[i] == toAddr) {
+                delete stakers[i];
+                break;
+            }
+        }
 
         _settleWithdraw(msg.sender, toAddr, amount);
         emit Withdrawn(msg.sender, amount);
@@ -368,6 +416,9 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
             // If the epoch has ended, lastUpdated = epochEndTime
             // If not yet, lastUpdated = block.timestamp (aka now)
             epochData[i].lastUpdated = Math.min(block.timestamp, epochEndTime);
+
+            // for every epoch, pick one NFT winner
+            _pickNFTWinner();
         }
     }
 
@@ -607,4 +658,14 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     function _allowedToWithdraw(address _token) internal view override returns (bool allowed) {
         allowed = _token != pendleTokenAddress && _token != stakeToken && _token != yieldToken;
     }
+
+    // helper ============================================
+    function getCurrentEpoch() external view returns (uint256) {
+        return _epochOfTimestamp(block.timestamp);
+    }
+
+    function getNumberOfEpoch() external view returns (uint256) {
+        return numberOfEpochs;
+    }
+    // helper ============================================
 }

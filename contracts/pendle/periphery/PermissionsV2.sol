@@ -7,9 +7,11 @@ import "../interfaces/IPermissionsV2.sol";
 
 abstract contract PermissionsV2 is IPermissionsV2 {
     PendleGovernanceManager public immutable override governanceManager;
+    address myGovernanceManager;
     address internal initializer;
 
     constructor(address _governanceManager) {
+        myGovernanceManager = _governanceManager;
         require(_governanceManager != address(0), "ZERO_ADDRESS");
         initializer = msg.sender;
         governanceManager = PendleGovernanceManager(_governanceManager);
@@ -26,6 +28,6 @@ abstract contract PermissionsV2 is IPermissionsV2 {
     }
 
     function _governance() internal view returns (address) {
-        return governanceManager.governance();
+        return myGovernanceManager;
     }
 }

@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from 'react'
-import Transfer from './Component/Transfer'
+import { ethers } from 'ethers'
 import Web3 from 'web3'
 import ERC20ABI from './ABI/ERC20.json'
-const PendleAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+import PendleLQABI from './ABI/PendleLQ.json'
+import UserAccount from './Component/UserAccount/index.js'
+import StakeInput from './Component/StakeInput/index.js'
+import StakeInfo from './Component/StakeInfo/index.js'
+const PendleAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+const PendleItemFactoryAddress = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512"
+const PendleLQAddress = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0"
 
 export default function App () {
   const [web3, setweb3] = useState(null)
   const [account, setaccount] = useState(null)
   const [pendleContract, setpendleContract] = useState(null)
+  const [pendleLQContract, setpendleLQContract] = useState(null)
   const [etherBalance, setetherBalance] = useState(0)
   const [pendleBalance, setpendleBalance] = useState(0)
 
@@ -37,6 +44,7 @@ export default function App () {
 
     // setup pendle contract
     setpendleContract(new web3.eth.Contract(ERC20ABI, PendleAddress))
+    setpendleLQContract(new web3.eth.Contract(PendleLQABI, PendleLQAddress))
 
     // get account address for the first time
     web3.eth.getAccounts()
@@ -59,27 +67,40 @@ export default function App () {
   useEffect(() => {
     if (!account) return
     web3.eth.getBalance(account)
-      .then(etherBalance => web3.utils.fromWei(etherBalance))
+      .then(etherBalance => ethers.utils.formatEther(etherBalance))
       .then(etherBalance => setetherBalance(etherBalance))
 
     if (!pendleContract) return
     pendleContract.methods.balanceOf(account).call()
-      .then(pendleBalance => web3.utils.fromWei(pendleBalance))
+      .then(pendleBalance => {
+        return ethers.utils.formatEther(pendleBalance)
+      })
       .then(pendleBalance => setpendleBalance(pendleBalance))
   }, [account, web3, pendleContract]) 
 
   return (
     <div className="app">
-      <div>Connected Address: { account }</div>
-      <div>Ether Balance: { etherBalance }</div>
-      <div>Pendle Balance: { pendleBalance }</div>
-      {
-        web3 && pendleContract && account 
-        ? 
-        <Transfer 
-          web3={web3} 
-          pendleContract={pendleContract} 
-          account={account}
+      <UserAccount 
+        account={account} 
+        etherBalance={etherBalance} 
+        pendleBalance={pendleBalance}
+      />
+      <StakeInput 
+        show={web3 && pendleContract && pendleLQContract && account} 
+        account={account} etherBalance={etherBalance} 
+        pendleBalance={pendleBalance}
+        pendleContract={pendleContract}
+        pendleLQContract={pendleLQContract}
+      />
+      { 
+        web3 && pendleContract && account && pendleLQContract 
+        ?
+        <StakeInfo 
+          web3={web3}
+          account={account} 
+          etherBalance={etherBalance} 
+          pendleBalance={pendleBalance}
+          pendleLQContract={pendleLQContract}
         />
         :
         null

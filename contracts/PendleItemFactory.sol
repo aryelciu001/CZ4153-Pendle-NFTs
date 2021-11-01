@@ -1,8 +1,8 @@
 pragma solidity 0.7.6;
+pragma abicoder v2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./openzeppelin/ERC721.sol";
-// import "./core/abstractV2/PendleLiquidityMiningBaseV2.sol";
 
 contract PendleItemFactory is Ownable, ERC721 {
     event NewItem(uint id, string name, uint dna);
@@ -12,23 +12,36 @@ contract PendleItemFactory is Ownable, ERC721 {
         uint dna;
     }
     
+    // contract owner
+    address public contractOwner;
+
     // array of items
     Item[] items;
     
     // map address to how many items this address has
-    mapping (address => uint) addressToNumberOfItems;
+    mapping (address => uint) public addressToNumberOfItems;
     
-    // map cat id to owner address
-    mapping (uint => address) itemIdToAddress;
-    
-    // map cat id to approved operator
+    // map item id to owner address
+    mapping (uint => address) public itemIdToAddress;
+
+    // map item id to address allowed to transfer item
     mapping (uint => address) itemIdToApprovedOp;
-    
+
+    // when contract is deployed
+    // this will be run
+    constructor () ERC721("PendleItem", "PITM") {
+        contractOwner = msg.sender;
+        for (uint256 i = 1; i<=100; i++) {
+            _createNewItem(_appendUintToString("Pendle", i));
+        }
+    }
+
     // this should be called by pendle reward system
     // because every item is created internally, 
     // contract needs to send the item to address 
     // by triggering safeTransferFrom function
-    function createNewItem(string memory _name) public {
+    function _createNewItem(string memory _name) internal {
+        require(msg.sender == contractOwner);
         uint dna = uint(keccak256(abi.encodePacked(_name)));
         items.push(Item(_name, dna));
         uint id = items.length - 1;
@@ -37,10 +50,33 @@ contract PendleItemFactory is Ownable, ERC721 {
         itemIdToAddress[id] = msg.sender;
     }
 
-    // when contract is deployed
-    // this will be run
-    constructor () ERC721("PendleItem", "PITM") {
-        // createNewItem("first");
+    function getContractOwner() public view returns(address) {
+        return contractOwner;
+    }
+
+    function _appendUintToString(string memory inStr, uint v) internal returns (string memory str) {
+        uint maxlength = 100;
+        bytes memory reversed = new bytes(maxlength);
+        uint i = 0;
+        while (v != 0) {
+            uint remainder = v % 10;
+            v = v / 10;
+            reversed[i++] = byte(uint8(48 + remainder));
+        }
+        bytes memory inStrb = bytes(inStr);
+        bytes memory s = new bytes(inStrb.length + i);
+        uint j;
+        for (j = 0; j < inStrb.length; j++) {
+            s[j] = inStrb[j];
+        }
+        for (j = 0; j < i; j++) {
+            s[j + inStrb.length] = reversed[i - 1 - j];
+        }
+        str = string(s);
+    }
+
+    function getAllItems() public view returns(Item [] memory) {
+        return items;
     }
     
     // ERC-721 functions

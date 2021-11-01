@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "lite-server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "frontend": "cd frontend && npm start",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "console": "npx hardhat console --network localhost",
+    "node": "npx hardhat node",
+    "deploy": "npx hardhat run --network localhost scripts/deploy.js"
   },
   "author": "",
   "license": "ISC",

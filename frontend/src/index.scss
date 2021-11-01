@@ -1,0 +1,20 @@
+body, html, .app {
+  width: 100%;
+  background-color: #cceeff;
+}
+
+body, html, * {
+  margin: 0;
+  padding: 0;
+}
+
+.app {
+  .stake-input {
+    margin-top: 50px;    
+  }
+  .row {
+    margin-bottom: 20px;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+}

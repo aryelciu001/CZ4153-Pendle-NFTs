@@ -1,7 +1,8 @@
 import { expect } from "chai";
-import { Signer, ContractFactory, Contract } from "ethers";
+import { Signer, ContractFactory, Contract, BigNumber as BN } from "ethers";
 import { ethers } from "hardhat";
 
+const ONE_DAY = BN.from(86400);
 const pendleItemFactoryContractName: string = "PendleItemFactory";
 const pendleContractName: string = "PENDLE";
 const pendleLiquidityContractName: string = "PendleLiquidityMiningBaseV2";
@@ -28,36 +29,24 @@ describe("PendleItemFactory", async function () {
   let pendleContract: Contract;
   let pendleLiquidityMiningContract: Contract;
 
-
-  it("Should deploy pendle item contract...", async function () {
-    PendleItemFactory = await ethers.getContractFactory(pendleItemFactoryContractName);
-    pendleItemFactoryContract = await PendleItemFactory.deploy();
+  it("Should init addresses...", async function() {
     [owner, addr1, addr2] = await ethers.getSigners();
     ownerAddress = await owner.getAddress();
     addr1Address = await addr1.getAddress();
     addr2Address = await addr2.getAddress();
+  })
+
+  it("Should deploy pendle item contract...", async function () {
+    PendleItemFactory = await ethers.getContractFactory(pendleItemFactoryContractName);
+    pendleItemFactoryContract = await PendleItemFactory.deploy();
     await pendleItemFactoryContract.deployed();
   }).timeout(10000);
   
   it("Should create new items...", async function () {
-    await pendleItemFactoryContract.createNewItem("first");
-    await pendleItemFactoryContract.createNewItem("second");
-    await pendleItemFactoryContract.createNewItem("third");
-  })
-  
-  it("should transfer items...", async function () {
-    // transfer directly from owner to addr1
-    await pendleItemFactoryContract["safeTransferFrom(address,address,uint256)"](ownerAddress, addr1Address, 1);
-    // approve addr1 to move token 2
-    await pendleItemFactoryContract["approve(address,uint256)"](addr1Address, 2);
-    // transfer from owner to addr2, called by addr1
-    await pendleItemFactoryContract.connect(addr1)["safeTransferFrom(address,address,uint256)"](ownerAddress, addr2Address, 2);
-  })
-
-  it("should check owner...", async function () {
-    expect(await pendleItemFactoryContract.ownerOf(0)).to.equal(ownerAddress);
-    expect(await pendleItemFactoryContract.ownerOf(1)).to.equal(addr1Address);
-    expect(await pendleItemFactoryContract.ownerOf(2)).to.equal(await addr2.getAddress());
+    // expect factory to create 100 NFTs
+    // owner should have 100 NFTs
+    expect((await pendleItemFactoryContract["balanceOf(address)"](ownerAddress)).toNumber()).to.equal(100)
+    expect((await pendleItemFactoryContract.addressToNumberOfItems(ownerAddress)).toNumber()).to.equal(100)
   })
 
   it("should deploy PENDLE contract...", async function () {
@@ -89,6 +78,14 @@ describe("PendleItemFactory", async function () {
   }).timeout(10000);
 
   it("should deploy PENDLE LIQUIDITY MINING contract...", async function () {
+    // add 5 seconds to startTime so startTime > block.timestamp
+    // in unix (second time)
+    const startTime = Math.floor((new Date()).getTime() / 1000) + 10
+
+    // epoch duration (in second)
+    const epochDuration = 1
+    const vestingEpoch = 5
+
     PendleLiquidityMining = await ethers.getContractFactory(pendleLiquidityContractName);
     pendleLiquidityMiningContract = await PendleLiquidityMining.deploy(
       ownerAddress, // _governanceManager
@@ -97,18 +94,45 @@ describe("PendleItemFactory", async function () {
       pendleContract.address, // _pendleTokenAddress
       pendleContract.address, // _stakeToken
       zeroAddress, // _yieldToken
-      Math.floor(Date.now() / 1000) + 60, // _startTime (in unix, now + 60 seconds)
-      60*60*24, // _epochDuration (24 hours)
-      5 // _vestingEpochs
+      startTime, // _startTime (now + 60 seconds)
+      epochDuration, // _epochDuration (1 minute)
+      vestingEpoch, // _vestingEpochs
+      pendleItemFactoryContract.address // item factory address
     );
     await pendleLiquidityMiningContract.deployed();
   }).timeout(10000);
 
-  it("should stake pendle token...", async function () {
-    // allow liquidity mining contract to spend 1000 pendle tokens
-    await pendleContract.connect(owner)["approve(address,uint256)"](pendleLiquidityMiningContract.address, ethers.utils.parseEther("1000"))
+  it("should approve liquidity mining...", async function () {
+    // allow liquidity mining contract to spend 80 million pendle tokens
+    await pendleContract.connect(owner)["approve(address,uint256)"](pendleLiquidityMiningContract.address, ethers.utils.parseEther("80000000"))
 
-    // trying to stake
-    // await pendleLiquidityMiningContract.connect(addr2)["stake(address,uint256)"](addr2Address, ethers.utils.parseEther("10"))
-  });
+    // define reward for staking
+    const reward = ethers.utils.parseEther("1000")
+
+    // fund new epoch
+    const rewards = [reward, reward, reward]
+    await pendleLiquidityMiningContract.connect(owner).fund(rewards)
+  }).timeout(10000);
+
+  it("should approve pendle liquidity mining to transfer NFTs from owner...", async function() {
+    // approve pendle liquidity mining to transfer NFTs
+    for (let i = 0; i<100; i++) {
+      await pendleItemFactoryContract.connect(owner)["approve(address,uint256)"](pendleLiquidityMiningContract.address, i)
+    }
+    // expect pendle liquidity mining to be approved to transfer NFT with id 80
+    expect((await pendleItemFactoryContract["getApproved(uint256)"](80))).to.equal(pendleLiquidityMiningContract.address)
+
+    // expect new owner for NFT with id 0
+    await pendleLiquidityMiningContract["testNFTTransfer(address)"](addr2Address)
+    await pendleLiquidityMiningContract["testNFTTransfer(address)"](addr1Address)
+    await pendleLiquidityMiningContract["testNFTTransfer(address)"](addr2Address)
+    expect(await pendleItemFactoryContract["ownerOf(uint256)"](0)).to.equal(addr2Address)
+    expect(await pendleItemFactoryContract["ownerOf(uint256)"](1)).to.equal(addr1Address)
+    expect(await pendleItemFactoryContract["ownerOf(uint256)"](2)).to.equal(addr2Address)
+  })
+
+  // it("should stake pendle token...", async function () {
+  //   // trying to stake
+  //   await pendleLiquidityMiningContract.connect(addr2)["stake(address,uint256)"](addr2Address, ethers.utils.parseEther("10"))
+  // });
 });
