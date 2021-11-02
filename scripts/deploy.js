@@ -34,6 +34,7 @@ async function deployLiquidityMining(deployerAddress, pendleTokenAddress, pendle
     const _startTime = Math.floor(Date.now() / 1000) + 60 * 3 // now + 60 seconds
     const _epochDuration = 60 // 1 minute
     const _vestingEpochs = 5
+    const _exchangeRate = 100
 
     const pendleLiquidityMining = await PendleLiquidityMining.deploy(
       _governanceManager,
@@ -45,7 +46,8 @@ async function deployLiquidityMining(deployerAddress, pendleTokenAddress, pendle
       _startTime,
       _epochDuration,
       _vestingEpochs,
-      pendleItemFactoryAddress
+      pendleItemFactoryAddress,
+      _exchangeRate
     );
 
     resolve(pendleLiquidityMining.address)
@@ -88,9 +90,7 @@ async function main() {
   const pendleLQ = await PendleLiquidityMining.attach(pendleLiquidityMiningAddress);
 
   // approve pendleLiquiditymining contract to transfer NFTs
-  for (let i = 0; i<100; i++) {
-    await pif.connect(deployer).approve(pendleLQ.address, i)
-  }
+  await pif.connect(deployer).approveForAll(pendleLQ.address)
 
   // initialize rewards for staking
   const reward = ethers.utils.parseEther("100");

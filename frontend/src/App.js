@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { ethers } from 'ethers'
 import Web3 from 'web3'
-import ERC20ABI from './ABI/ERC20.json'
-import PendleLQABI from './ABI/PendleLQ.json'
+import PendleAbi from  './artifacts/contracts/pendle/tokens/PENDLE.sol/PENDLE.json'
+import PendleLQABI from './artifacts/contracts/pendle/core/abstractV2/PendleLiquidityMiningBaseV2.sol/PendleLiquidityMiningBaseV2.json'
+import PendleItemABI from './artifacts/contracts/PendleItemFactory.sol/PendleItemFactory.json'
 import UserAccount from './Component/UserAccount/index.js'
 import StakeInput from './Component/StakeInput/index.js'
 import StakeInfo from './Component/StakeInfo/index.js'
+import NFTCollection from './Component/NFTCollection'
 const PendleAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3"
-const PendleItemFactoryAddress = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512"
+const PendleItemAddress = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512"
 const PendleLQAddress = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0"
 
 export default function App () {
@@ -15,8 +17,12 @@ export default function App () {
   const [account, setaccount] = useState(null)
   const [pendleContract, setpendleContract] = useState(null)
   const [pendleLQContract, setpendleLQContract] = useState(null)
+  const [pendleItemContract, setpendleItemContract] = useState(null)
   const [etherBalance, setetherBalance] = useState(0)
   const [pendleBalance, setpendleBalance] = useState(0)
+  const [pendleStaked, setpendleStaked] = useState(0)
+  const [pendleItemPoints, setpendleItemPoints] = useState(0)
+  const [nftER, setnftER] = useState(0)
 
   // First initialization
   // setup metamask
@@ -43,8 +49,9 @@ export default function App () {
     if (!web3) return
 
     // setup pendle contract
-    setpendleContract(new web3.eth.Contract(ERC20ABI, PendleAddress))
-    setpendleLQContract(new web3.eth.Contract(PendleLQABI, PendleLQAddress))
+    setpendleContract(new web3.eth.Contract(PendleAbi.abi, PendleAddress))
+    setpendleLQContract(new web3.eth.Contract(PendleLQABI.abi, PendleLQAddress))
+    setpendleItemContract(new web3.eth.Contract(PendleItemABI.abi, PendleItemAddress))
 
     // get account address for the first time
     web3.eth.getAccounts()
@@ -65,6 +72,10 @@ export default function App () {
 
   // Get metamask balance
   useEffect(() => {
+    updateBalance()
+  }, [account, web3, pendleContract]) 
+
+  const updateBalance = () => {
     if (!account) return
     web3.eth.getBalance(account)
       .then(etherBalance => ethers.utils.formatEther(etherBalance))
@@ -76,7 +87,17 @@ export default function App () {
         return ethers.utils.formatEther(pendleBalance)
       })
       .then(pendleBalance => setpendleBalance(pendleBalance))
-  }, [account, web3, pendleContract]) 
+
+    if (!pendleLQContract) return
+    pendleLQContract.methods.balances(account).call()
+      .then(pendleStakedBlockchain => setpendleStaked(ethers.utils.formatEther(pendleStakedBlockchain)))
+
+    pendleLQContract.methods.pendleItemPoints(account).call()
+      .then(point => setpendleItemPoints(point))
+
+    pendleLQContract.methods.pointExchangeRate().call()
+      .then(exchangeRate => setnftER(exchangeRate))
+  }
 
   return (
     <div className="app">
@@ -91,17 +112,28 @@ export default function App () {
         pendleBalance={pendleBalance}
         pendleContract={pendleContract}
         pendleLQContract={pendleLQContract}
+        updateBalance={updateBalance}
       />
       { 
         web3 && pendleContract && account && pendleLQContract 
         ?
-        <StakeInfo 
-          web3={web3}
-          account={account} 
-          etherBalance={etherBalance} 
-          pendleBalance={pendleBalance}
-          pendleLQContract={pendleLQContract}
-        />
+        <>
+          <StakeInfo 
+            web3={web3}
+            account={account} 
+            etherBalance={etherBalance} 
+            pendleBalance={pendleBalance}
+            pendleLQContract={pendleLQContract}
+            pendleStaked={pendleStaked}
+            pendleItemPoints={pendleItemPoints}
+            nftER={nftER}
+            updateBalance={updateBalance}
+          />
+          <NFTCollection
+            pendleItemContract={pendleItemContract}
+            account={account}
+          ></NFTCollection>
+        </>
         :
         null
       }

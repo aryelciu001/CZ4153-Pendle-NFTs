@@ -27,5 +27,6 @@ module.exports = {
   },
   paths: {
     sources: "./contracts",
+    artifacts: "./frontend/src/artifacts"
   }
 };

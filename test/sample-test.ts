@@ -40,14 +40,11 @@ describe("PendleItemFactory", async function () {
     PendleItemFactory = await ethers.getContractFactory(pendleItemFactoryContractName);
     pendleItemFactoryContract = await PendleItemFactory.deploy();
     await pendleItemFactoryContract.deployed();
-  }).timeout(10000);
-  
-  it("Should create new items...", async function () {
+
     // expect factory to create 100 NFTs
     // owner should have 100 NFTs
     expect((await pendleItemFactoryContract["balanceOf(address)"](ownerAddress)).toNumber()).to.equal(100)
-    expect((await pendleItemFactoryContract.addressToNumberOfItems(ownerAddress)).toNumber()).to.equal(100)
-  })
+  }).timeout(10000)
 
   it("should deploy PENDLE contract...", async function () {
     Pendle = await ethers.getContractFactory(pendleContractName);
@@ -97,7 +94,8 @@ describe("PendleItemFactory", async function () {
       startTime, // _startTime (now + 60 seconds)
       epochDuration, // _epochDuration (1 minute)
       vestingEpoch, // _vestingEpochs
-      pendleItemFactoryContract.address // item factory address
+      pendleItemFactoryContract.address, // item factory address
+      0 // NFT - point exchange rate
     );
     await pendleLiquidityMiningContract.deployed();
   }).timeout(10000);
@@ -109,30 +107,34 @@ describe("PendleItemFactory", async function () {
     // define reward for staking
     const reward = ethers.utils.parseEther("1000")
 
-    // fund new epoch
-    const rewards = [reward, reward, reward]
+    // fund new epochs
+    const rewards = Array(100).fill(reward)
     await pendleLiquidityMiningContract.connect(owner).fund(rewards)
   }).timeout(10000);
 
   it("should approve pendle liquidity mining to transfer NFTs from owner...", async function() {
     // approve pendle liquidity mining to transfer NFTs
-    for (let i = 0; i<100; i++) {
-      await pendleItemFactoryContract.connect(owner)["approve(address,uint256)"](pendleLiquidityMiningContract.address, i)
-    }
+    await pendleItemFactoryContract.connect(owner)["approveForAll(address)"](pendleLiquidityMiningContract.address)
+
     // expect pendle liquidity mining to be approved to transfer NFT with id 80
     expect((await pendleItemFactoryContract["getApproved(uint256)"](80))).to.equal(pendleLiquidityMiningContract.address)
-
-    // expect new owner for NFT with id 0
-    await pendleLiquidityMiningContract["testNFTTransfer(address)"](addr2Address)
-    await pendleLiquidityMiningContract["testNFTTransfer(address)"](addr1Address)
-    await pendleLiquidityMiningContract["testNFTTransfer(address)"](addr2Address)
-    expect(await pendleItemFactoryContract["ownerOf(uint256)"](0)).to.equal(addr2Address)
-    expect(await pendleItemFactoryContract["ownerOf(uint256)"](1)).to.equal(addr1Address)
-    expect(await pendleItemFactoryContract["ownerOf(uint256)"](2)).to.equal(addr2Address)
   })
 
-  // it("should stake pendle token...", async function () {
-  //   // trying to stake
-  //   await pendleLiquidityMiningContract.connect(addr2)["stake(address,uint256)"](addr2Address, ethers.utils.parseEther("10"))
-  // });
+  it("should send nft to addr1...", async function () {
+    // exchange points with nft
+    await pendleLiquidityMiningContract.connect(addr2)["exchangePointForNFT()"]()
+    await pendleLiquidityMiningContract.connect(addr2)["exchangePointForNFT()"]()
+
+    // because exchange rate is 0, we can transfer nft to addr2 with 0 point
+    expect(await pendleItemFactoryContract["balanceOf(address)"](addr2Address)).to.equal(2)
+
+    // check if the owner of nft id 0 is add2
+    expect(await pendleItemFactoryContract["ownerOf(uint256)"](0)).to.equal(addr2Address)
+
+    // check if the rest of nft belong to owner
+    expect(await pendleItemFactoryContract["ownerOf(uint256)"](2)).to.equal(ownerAddress)
+
+    // expect addr2 to have 2 items
+    expect((await pendleItemFactoryContract.connect(addr2)["getOwnedItems()"]()).length).to.equal(2)
+  });
 });
