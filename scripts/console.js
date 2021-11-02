@@ -124,3 +124,8 @@ await pendleLQ.connect(addr1).updateAndReadEpochData(await pendleLQ.getCurrentEp
 // get status of current epoch
 let epochData = await pendleLQ.connect(addr1).readEpochData(await pendleLQ.getCurrentEpoch(), await addr1.getAddress());ethers.utils.formatEther(epochData.availableRewardsForUser)
 ethers.utils.formatEther(await pendleLQ.totalStake())
+
+const ownerItems = (await pif.connect(owner).getOwnedItems())
+let count = 0;
+for (let e of ownerItems) {console.log(e);count++;}
+ownerItems.map(e => console.log(e.toNumber()))
