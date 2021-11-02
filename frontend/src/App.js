@@ -23,6 +23,8 @@ export default function App () {
   const [pendleStaked, setpendleStaked] = useState(0)
   const [pendleItemPoints, setpendleItemPoints] = useState(0)
   const [nftER, setnftER] = useState(0)
+  const [epoch, setepoch] = useState(0)
+  const [NFTs, setNFTs] = useState([])
 
   // First initialization
   // setup metamask
@@ -97,6 +99,27 @@ export default function App () {
 
     pendleLQContract.methods.pointExchangeRate().call()
       .then(exchangeRate => setnftER(exchangeRate))
+
+    const checkEpochInterval = setInterval(() => {
+      pendleLQContract.methods.getCurrentEpoch().call()
+        .then(currentEpoch => {
+          setepoch(currentEpoch)
+        })
+        .catch(e => console.log(e))
+    }, 1000)
+
+    pendleItemContract.methods.getOwnedItems().call({
+      from: account
+    })
+      .then(nfts => {
+        nfts = nfts.map(e => Number(e) + 1)
+        setNFTs(nfts)
+      })
+
+    // cleanup
+    return () => {
+      clearInterval(checkEpochInterval)
+    }
   }
 
   return (
@@ -113,6 +136,7 @@ export default function App () {
         pendleContract={pendleContract}
         pendleLQContract={pendleLQContract}
         updateBalance={updateBalance}
+        epoch={epoch}
       />
       { 
         web3 && pendleContract && account && pendleLQContract 
@@ -128,10 +152,12 @@ export default function App () {
             pendleItemPoints={pendleItemPoints}
             nftER={nftER}
             updateBalance={updateBalance}
+            epoch={epoch}
           />
           <NFTCollection
             pendleItemContract={pendleItemContract}
             account={account}
+            NFTs={NFTs}
           ></NFTCollection>
         </>
         :

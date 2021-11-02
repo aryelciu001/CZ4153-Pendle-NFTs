@@ -65,11 +65,14 @@ async function deployItemFactory() {
 }
 
 async function main() {
+  // mimic real life by mining new block evert 1 second
+  await network.provider.send("evm_setIntervalMining", [1000]);
+
   // initialize owner address
-  const [ deployer ] = await ethers.getSigners();
+  const [ deployer, addr1, addr2 ] = await ethers.getSigners();
   const deployerAddress = deployer.address;
 
-  console.log("Deploying contracts with the account:", deployerAddress);
+  console.log("Deploying contracts with the address:", deployerAddress);
   console.log("Account balance (before):", (await deployer.getBalance()).toString());
 
   // deploy contracts and get the address
@@ -79,6 +82,7 @@ async function main() {
 
   console.log("Account balance (after):", (await deployer.getBalance()).toString());
 
+  // create contract instance to
   // interact with contracts
   const Pendle = await ethers.getContractFactory(pendleContractName);
   const pendle = await Pendle.attach(pendleTokenAddress);
@@ -92,15 +96,19 @@ async function main() {
   // approve pendleLiquiditymining contract to transfer NFTs
   await pif.connect(deployer).approveForAll(pendleLQ.address)
 
+  // approve pendleLiquiditymining contract to spend owner's (deployer) pendle token
+  await pendle.connect(deployer).approve(pendleLiquidityMiningAddress, ethers.utils.parseEther("100000"))
+
   // initialize rewards for staking
   const reward = ethers.utils.parseEther("100");
   const rewards = Array(1000).fill(reward);
 
-  // approve pendleLiquiditymining contract to spend owner's (deployer) pendle token
-  await pendle.connect(deployer).approve(pendleLiquidityMiningAddress, ethers.utils.parseEther("80000000"))
-
   // fun pendleLiquiditymining for staking rewards
   await pendleLQ.connect(deployer).fund(rewards);
+
+  // send some pendle to other address for simulation
+  await pendle.connect(deployer).transfer(await addr1.getAddress(), ethers.utils.parseEther("10000"))
+  await pendle.connect(deployer).transfer(await addr2.getAddress(), ethers.utils.parseEther("10000"))
 }
 
 main()

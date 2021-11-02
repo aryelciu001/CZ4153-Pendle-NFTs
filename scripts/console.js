@@ -74,11 +74,11 @@ ethers.utils.formatEther(await pendleLQ.getCurrentEpoch())
 
 // 1. init contracts
 
-const Pendle = await ethers.getContractFactory("PENDLE");const pendle = await Pendle.attach("0x5fbdb2315678afecb367f032d93f642f64180aa3");const PendleItemFactory = await ethers.getContractFactory("PendleItemFactory");const pif = await PendleItemFactory.attach("0xe7f1725e7734ce288f8367e1bb143e90bb3f0512");const PendleLiquidityMining = await ethers.getContractFactory("PendleLiquidityMiningBaseV2");const pendleLQ = await PendleLiquidityMining.attach("0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0");const [owner, addr1, addr2] = await ethers.getSigners();
+const Pendle = await ethers.getContractFactory("PENDLE");const pendle = await Pendle.attach("0x5fbdb2315678afecb367f032d93f642f64180aa3");const PendleItemFactory = await ethers.getContractFactory("PendleItemFactory");const pif = await PendleItemFactory.attach("0xe7f1725e7734ce288f8367e1bb143e90bb3f0512");const PendleLiquidityMining = await ethers.getContractFactory("PendleLiquidityMiningBaseV2");const pendleLQ = await PendleLiquidityMining.attach("0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0");
 
 // 2. get eth accounts
 
-
+const [owner, addr1, addr2] = await ethers.getSigners();
 
 // 3. approve pendleLQ to spend owner's pendles
 
@@ -92,8 +92,7 @@ await pendleLQ.connect(owner).fund(rewards);
 
 // 5. transfer some pendles to another address to stake
 
-await pendle.connect(owner).transfer(await addr1.getAddress(), ethers.utils.parseEther("10000"))
-await pendle.connect(owner).transfer(await addr2.getAddress(), ethers.utils.parseEther("10000"))
+await pendle.connect(owner).transfer(await addr1.getAddress(), ethers.utils.parseEther("10000"));await pendle.connect(owner).transfer(await addr2.getAddress(), ethers.utils.parseEther("10000"))
 
 // 6. pendleLQ funded, now can stake
 
@@ -121,6 +120,7 @@ ethers.utils.formatEther((await pendleLQ.connect(addr2).readEpochData(2, await a
 
 // update current epoch
 await pendleLQ.connect(addr1).updateAndReadEpochData(await pendleLQ.getCurrentEpoch(), await addr1.getAddress())
+
 // get status of current epoch
 let epochData = await pendleLQ.connect(addr1).readEpochData(await pendleLQ.getCurrentEpoch(), await addr1.getAddress());ethers.utils.formatEther(epochData.availableRewardsForUser)
 ethers.utils.formatEther(await pendleLQ.totalStake())

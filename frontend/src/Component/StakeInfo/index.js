@@ -5,7 +5,6 @@ import DialogComponent from '../DialogComponent';
 import './index.scss'
 
 export default function StakeInfo (props) {
-  const [epoch, setepoch] = useState(0)
   const [pendleStaked, setpendleStaked] = useState(0)
   const [dialogState, setdialogState] = useState({
     open: false,
@@ -14,27 +13,15 @@ export default function StakeInfo (props) {
   })
 
   useEffect(() => {
-    const pendleLQContract = props.pendleLQContract
-    const checkEpochInterval = setInterval(() => {
-      pendleLQContract.methods.getCurrentEpoch().call()
-        .then(currentEpoch => {
-          setepoch(currentEpoch)
-        })
-        .catch(e => console.log(e))
-    }, 1000)
-
-    // cleanup
-    return () => {
-      clearInterval(checkEpochInterval)
-    }
-  }, [])
-
-  useEffect(() => {
     const userAddress = props.account
     const pendleLQContract = props.pendleLQContract
-
+    const epoch = props.epoch
+    if (epoch <= 0) return
+    
     // Update epoch data
-    pendleLQContract.methods.updateAndReadEpochData(epoch, userAddress).call()
+    pendleLQContract.methods.updateAndReadEpochData(epoch, userAddress).call({
+      from: userAddress
+    })
       .then(() => {
         // get updated epoch data
         pendleLQContract.methods.readEpochData(epoch, userAddress).call()
@@ -44,7 +31,7 @@ export default function StakeInfo (props) {
           .catch(e => console.log(e))
       })
       .catch(e => console.log(e))
-  }, [epoch])
+  }, [props.epoch])
 
   const redeemPoints = () => {
     if (props.nftER > props.pendleItemPoints) {
@@ -78,7 +65,7 @@ export default function StakeInfo (props) {
         handleClose={()=>setdialogState({...dialogState, open: false})}
         open={dialogState.open}
       />
-      <Typography>Current Epoch: {epoch}</Typography>
+      <Typography>Current Epoch: {props.epoch}</Typography>
       <Typography>Staked: { props.pendleStaked } Pendle</Typography>
       <Typography>Pendle Item Points: { props.pendleItemPoints } points</Typography>
       <Typography>Pendle Item Exchange Rate: { props.nftER } points/NFT</Typography>

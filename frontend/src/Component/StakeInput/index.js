@@ -15,6 +15,14 @@ export default function StakeInput(props) {
   const stake = (e) => {
     e.preventDefault()
     if (pendleToStake <= 0) return
+    if (props.epoch <= 0) {
+      setdialogState({
+        open: true,
+        title: "Can't stake now",
+        text: "Epoch has not started."
+      })
+      return
+    }
     if (props.pendleBalance < Number(pendleToStake)) {
       setdialogState({
         open: true,
