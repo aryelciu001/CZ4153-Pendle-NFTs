@@ -95,7 +95,8 @@ describe("PendleItemFactory", async function () {
       epochDuration, // _epochDuration (1 minute)
       vestingEpoch, // _vestingEpochs
       pendleItemFactoryContract.address, // item factory address
-      0 // NFT - point exchange rate
+      0, // NFT - point exchange rate
+      100 // pendle item points to be distributed per epoch
     );
     await pendleLiquidityMiningContract.deployed();
   }).timeout(10000);

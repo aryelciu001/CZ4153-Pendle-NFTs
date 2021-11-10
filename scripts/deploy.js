@@ -31,10 +31,11 @@ async function deployLiquidityMining(deployerAddress, pendleTokenAddress, pendle
     const _pendleTokenAddress = pendleTokenAddress
     const _stakeToken = pendleTokenAddress
     const _yieldToken = zeroAddress
-    const _startTime = Math.floor(Date.now() / 1000) + 60 * 3 // now + 60 seconds
+    const _startTime = Math.floor(Date.now() / 1000) + 60 // now + 60 seconds
     const _epochDuration = 60 // 1 minute
     const _vestingEpochs = 5
     const _exchangeRate = 100
+    const _pendleItemPointsPerEpoch = 100
 
     const pendleLiquidityMining = await PendleLiquidityMining.deploy(
       _governanceManager,
@@ -47,7 +48,8 @@ async function deployLiquidityMining(deployerAddress, pendleTokenAddress, pendle
       _epochDuration,
       _vestingEpochs,
       pendleItemFactoryAddress,
-      _exchangeRate
+      _exchangeRate,
+      _pendleItemPointsPerEpoch
     );
 
     resolve(pendleLiquidityMining.address)

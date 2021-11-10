@@ -27,8 +27,22 @@
 
 ## 3. Run web3-app (using react)
   - `npm run frontend`
+  - connect to metamask (select `localhost:8545` network)
+  - wait for 60 seconds before staking (epoch has not started!)
   - to see NFTs, after redeeming, restart page. You will see NFT Collections below
+  - Sometimes metamask keeps loading even though the transaction passes. Refresh page if it happens
+  - for smoother experience, reset account on the address you want to use!
 
 # How to run test script
   - test script is located at `./test/sample-test.ts`
   - run `npx hardhat test`
+
+# How to interact with contracts using console
+  - run `npm run console`
+
+# Software Requirements
+
+## Supporting ERC-721 enumerable NFTs as rewards + pendle tokens. The reward mechanism of PENDLE tokens should remain unchanged (linearly vested over epochs)
+## A method to track the reward points proportional to the amount of LP tokens provided by the user to represent when he is eligible to claim an NFT.
+## A configurable exchange rate of rewards points to an NFT.
+## Reward points can only be accumulated when LPs are staked.

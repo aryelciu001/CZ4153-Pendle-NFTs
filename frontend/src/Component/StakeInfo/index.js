@@ -1,37 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Typography, Button } from '@mui/material';
-import { ethers } from 'ethers';
 import DialogComponent from '../DialogComponent';
 import './index.scss'
 
 export default function StakeInfo (props) {
-  const [pendleStaked, setpendleStaked] = useState(0)
+
   const [dialogState, setdialogState] = useState({
     open: false,
     title: "",
     text: ""
   })
-
-  useEffect(() => {
-    const userAddress = props.account
-    const pendleLQContract = props.pendleLQContract
-    const epoch = props.epoch
-    if (epoch <= 0) return
-    
-    // Update epoch data
-    pendleLQContract.methods.updateAndReadEpochData(epoch, userAddress).call({
-      from: userAddress
-    })
-      .then(() => {
-        // get updated epoch data
-        pendleLQContract.methods.readEpochData(epoch, userAddress).call()
-          .then(data => {
-            // Object.keys(data).map(d => console.log(d + " " + ethers.utils.formatEther(data[d])))
-          })
-          .catch(e => console.log(e))
-      })
-      .catch(e => console.log(e))
-  }, [props.epoch])
 
   const redeemPoints = () => {
     if (props.nftER > props.pendleItemPoints) {
@@ -57,6 +35,54 @@ export default function StakeInfo (props) {
       })
   }
 
+  const claimReward = () => {
+    if (props.epoch === "0") {
+      setdialogState({
+        open: true,
+        title: "Epoch has not started!",
+        text: "Wait until epoch starts"
+      })
+      return
+    }
+    props.pendleLQContract.methods.updateAndReadEpochData(props.epoch, props.account).send({
+      from: props.account,
+      gasPrice: "124000000000",
+      gas: "10000000"
+    })
+      .then(() => {
+        setdialogState({
+          open: true,
+          title: "Rewards Claimed!",
+          text: "You can see your available rewards now. Wait and refresh to see it."
+        })
+        props.updateBalance()
+      })
+  }
+
+  const redeemStakingReward = () => {
+    if (props.epoch === "0") {
+      setdialogState({
+        open: true,
+        title: "Epoch has not started!",
+        text: "Wait until epoch starts"
+      })
+      return
+    }
+    props.pendleLQContract.methods.redeemRewards(props.account).send({
+      from: props.account,
+      gasPrice: "124000000000",
+      gas: "10000000"
+    })
+      .then(() => {
+        setdialogState({
+          open: true,
+          title: "Rewards Claimed!",
+          text: "You can see your staking rewards now. Wait and refresh to see it."
+        })
+        props.updateBalance()
+      })
+  }
+
   return (
     <div className="stake-info row">
       <DialogComponent
@@ -69,8 +95,14 @@ export default function StakeInfo (props) {
       <Typography>Staked: { props.pendleStaked } Pendle</Typography>
       <Typography>Pendle Item Points: { props.pendleItemPoints } points</Typography>
       <Typography>Pendle Item Exchange Rate: { props.nftER } points/NFT</Typography>
+      <Button onClick={claimReward} variant="contained">
+        Claim Rewards
+      </Button>
       <Button onClick={redeemPoints} variant="contained">
-        Redeem Points
+        Redeem Item Points
+      </Button>
+      <Button onClick={redeemStakingReward} variant="contained">
+        Redeem Staking Reward
       </Button>
     </div>
   )

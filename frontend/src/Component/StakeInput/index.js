@@ -33,6 +33,7 @@ export default function StakeInput(props) {
     }
     const pendleContract = props.pendleContract
     const pendleLQContract = props.pendleLQContract
+    console.log(pendleLQContract._address, props.account)
     pendleContract.methods.approve(pendleLQContract._address, ethers.utils.parseEther(pendleToStake)).send({
       from: props.account,
       gasPrice: "124000000000",

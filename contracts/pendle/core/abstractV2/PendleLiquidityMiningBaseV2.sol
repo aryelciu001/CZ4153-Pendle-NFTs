@@ -55,10 +55,11 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     uint256 public override lastNYield;
     uint256 public override paramL;
 
-    // for NFTs
-    address[] public stakers;
-    mapping(address => uint256) public pendleItemPoints;
-    uint256 public pointExchangeRate;
+    // for NFT reward
+    address[] public stakers; // array of stakers
+    mapping(address => uint256) public pendleItemPoints; // amount of item point of each address
+    uint256 public pendleItemPointPerEpoch; // amount of item point to be distributed per epoch
+    uint256 public pointExchangeRate; // NFT-pendle point exchange rate
 
     modifier hasStarted() {
         require(_getCurrentEpochId() > 0, "NOT_STARTED");
@@ -92,7 +93,8 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         uint256 _epochDuration,
         uint256 _vestingEpochs,
         address _pendleItemFactoryAddress,
-        uint256 _pointExchangeRate
+        uint256 _pointExchangeRate,
+        uint _pendleItemPointPerEpoch
     ) PermissionsV2(_governanceManager) {
         require(_startTime > block.timestamp, "INVALID_START_TIME");
         TokenUtils.requireERC20(_pendleTokenAddress);
@@ -110,6 +112,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         epochDuration = _epochDuration;
         vestingEpochs = _vestingEpochs;
         pointExchangeRate = _pointExchangeRate;
+        pendleItemPointPerEpoch = _pendleItemPointPerEpoch;
         paramL = 1;
     }
 
@@ -319,12 +322,32 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     }
 
     /**
+    @notice update pendle item reward
+    */
+    function _updatePendleItemPointsRewards () internal {
+        // loop thru past epoch because users may not have claimed rewards for previous epoch
+        for (uint256 i = _getCurrentEpochId(); i >= 1; i--) {
+            if (!epochData[i].hasDistributedNFTPoints) {
+                for (uint i = 0; i<stakers.length; i++) {
+                    // staker will get pendleItemPointPerEpoch * contribution to pool
+                    pendleItemPoints[stakers[i]] = pendleItemPoints[stakers[i]] + ((pendleItemPointPerEpoch * balances[stakers[i]]) / totalStake);
+                }
+                epochData[i].hasDistributedNFTPoints = true;
+            } else {
+                // if epoch[i] has distributed, means that the previous epoch reward has also been distributed
+                break;
+            }
+        }
+    }
+
+    /**
     @notice update all reward-related data for user
     @dev to be called before user's stakeToken balance changes
     @dev same logic as the function in V1
     */
     function _updatePendingRewards(address user) internal virtual {
         _updateStakeData();
+        _updatePendleItemPointsRewards();
 
         // user has not staked before, no need to do anything
         if (lastTimeUserStakeUpdated[user] == 0) {
@@ -393,18 +416,6 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
             uint256 lastUpdatedForEpoch = epochData[i].lastUpdated;
 
             if (lastUpdatedForEpoch == epochEndTime) {
-                // it means that epoch has over
-                // we can add nft points when epoch is over
-                // we just need to check if nft points on current epoch
-                // has been distributed or not
-                // for every epoch, pick one NFT winner
-                if (!epochData[i].hasDistributedNFTPoints) {
-                    for (uint i = 0; i<stakers.length; i++) {
-                        // staker will get 1000 * contribution to pool
-                        pendleItemPoints[stakers[i]] = pendleItemPoints[stakers[i]] + ((1000 * balances[stakers[i]]) / totalStake);
-                    }
-                    epochData[i].hasDistributedNFTPoints = true;
-                }
                 break; // its already updated until this epoch, our job here is done
             }
 
