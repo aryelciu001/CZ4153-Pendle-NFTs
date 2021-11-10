@@ -42,7 +42,51 @@
 
 # Software Requirements
 
-## Supporting ERC-721 enumerable NFTs as rewards + pendle tokens. The reward mechanism of PENDLE tokens should remain unchanged (linearly vested over epochs)
-## A method to track the reward points proportional to the amount of LP tokens provided by the user to represent when he is eligible to claim an NFT.
-## A configurable exchange rate of rewards points to an NFT.
-## Reward points can only be accumulated when LPs are staked.
+> Supporting ERC-721 enumerable NFTs as rewards + pendle tokens. The reward mechanism of PENDLE tokens should remain unchanged (linearly vested over epochs)
+
+- To claim pendle reward from staking, click `Redeem Staking Reward` button
+- To claim pendle item reward, click `Redeem Item Points` button
+- To exchange item points with NFT, click `Exchange Points with NFT` button
+
+> A method to track the reward points proportional to the amount of LP tokens provided by the user to represent when he is eligible to claim an NFT.
+
+- To claim pendle item reward, click `Redeem Item Points` button. The item points is available to redeem at the end of every epoch. The total reward will be include reward you get from when you stake until current epoch. 
+
+> A configurable exchange rate of rewards points to an NFT.
+
+- To change rate of reward, you need to use the console.
+- Steps:
+  - run `npm run console`
+  - run the following code
+
+  ```
+  // initialize contracts
+
+  const Pendle = await ethers.getContractFactory("PENDLE");
+  const pendle = await Pendle.attach("0x5fbdb2315678afecb367f032d93f642f64180aa3");
+  const PendleItemFactory = await ethers.getContractFactory("PendleItemFactory");
+  const pif = await PendleItemFactory.attach("0xe7f1725e7734ce288f8367e1bb143e90bb3f0512");
+  const PendleLiquidityMining = await ethers.getContractFactory("PendleLiquidityMiningBaseV2");
+  const pendleLQ = await PendleLiquidityMining.attach("0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0");
+
+  // get addresses
+
+  const [owner] = await ethers.getSigners();
+
+  // set new exchange rate
+
+  await pendle.connect(owner).setNFTExchangeRate(newExchangeRate)
+  ```
+  - wait until the UI updates
+
+> Reward points can only be accumulated when LPs are staked.
+
+- Yes. If you stake at epoch 6, when you claim reward at epoch 10, you will only claim reward from epoch 6 to 10. If you stop staking, your address will be removed from pendle item reward calculation and distribution
+
+> A sound NFT + token reward mechanism design.
+
+- pendle item reward is distributed equally to your contribution to the pool. 
+  
+  ```
+  pendleItemPoints = pendleItemPoints + ((pendleItemPointPerEpoch * staked balance) / totalStake);
+  ```
