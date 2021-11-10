@@ -1,4 +1,9 @@
-// list of commands for console
+/**
+ * 
+ * List of commands for console interaction
+ * Not important if you don't use console
+ * 
+ */
 
 // npx hardhat console --network localhost
 import { expect } from "chai";

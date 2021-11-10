@@ -11,7 +11,7 @@ export default function StakeInfo (props) {
     text: ""
   })
 
-  const redeemPoints = () => {
+  const exchangePointNft = () => {
     if (props.nftER > props.pendleItemPoints) {
       setdialogState({
         open: true,
@@ -35,7 +35,7 @@ export default function StakeInfo (props) {
       })
   }
 
-  const claimReward = () => {
+  const redeemItemPoints = () => {
     if (props.epoch === "0") {
       setdialogState({
         open: true,
@@ -95,14 +95,14 @@ export default function StakeInfo (props) {
       <Typography>Staked: { props.pendleStaked } Pendle</Typography>
       <Typography>Pendle Item Points: { props.pendleItemPoints } points</Typography>
       <Typography>Pendle Item Exchange Rate: { props.nftER } points/NFT</Typography>
-      <Button onClick={claimReward} variant="contained">
-        Claim Rewards
-      </Button>
-      <Button onClick={redeemPoints} variant="contained">
+      <Button onClick={redeemItemPoints} variant="contained">
         Redeem Item Points
       </Button>
       <Button onClick={redeemStakingReward} variant="contained">
         Redeem Staking Reward
+      </Button>
+      <Button onClick={exchangePointNft} variant="contained">
+        Exchange Points with NFT
       </Button>
     </div>
   )
