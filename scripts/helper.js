@@ -134,3 +134,5 @@ const ownerItems = (await pif.connect(owner).getOwnedItems())
 let count = 0;
 for (let e of ownerItems) {console.log(e);count++;}
 ownerItems.map(e => console.log(e.toNumber()))
+
+await pendleLQ.connect(owner).setNFTExchangeRate(100)

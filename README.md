@@ -1,6 +1,7 @@
 # How to run the app on your own
 
 ## 0. Install dependencies
+  - Install `node js`
   - run `npm install` at:
     - `./` for hardhat
     - `./frontend` for web3-app
